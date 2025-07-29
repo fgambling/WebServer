@@ -1,5 +1,20 @@
+/**
+ * @file http_conn.cpp
+ * @brief HTTP connection implementation file
+ * @details Implements the http_conn class methods for handling HTTP client connections.
+ *          Includes request parsing, response generation, and connection management.
+ * 
+ * Key Features:
+ * - Finite state machine for HTTP request parsing
+ * - Memory-mapped file serving for efficient file delivery
+ * - Non-blocking I/O with epoll integration
+ * - HTTP/1.1 protocol support with GET method
+ * - Error handling and proper HTTP status codes
+ */
+
 #include "http_conn.h"
 
+// HTTP status messages for response generation
 const char* ok_200_title = "OK";
 const char* error_400_title = "Bad Request";
 const char* error_400_form = "Your request has bad syntax or is inherently impossible to satisfy.\n";
@@ -10,11 +25,19 @@ const char* error_404_form = "The requested file was not found on this server.\n
 const char* error_500_title = "Internal Error";
 const char* error_500_form = "There was an unusual problem serving the requested file.\n";
 
+// Document root directory for serving static files
 const char* doc_root = "/home/ubuntu/WebServer/resources";
 
+// Static member initialization
 int http_conn::m_epollfd = -1;
 int http_conn::m_user_count = 0;
 
+/**
+ * @brief Set file descriptor to non-blocking mode
+ * @param fd File descriptor to modify
+ * @details Modifies the file descriptor flags to enable non-blocking I/O operations.
+ *          This is essential for the event-driven architecture of the web server.
+ */
 void setnonblocking(int fd)
 {
     int old_option = fcntl( fd, F_GETFL );
@@ -22,6 +45,14 @@ void setnonblocking(int fd)
     fcntl( fd, F_SETFL, old_option );
 }
 
+/**
+ * @brief Add file descriptor to epoll instance
+ * @param epollfd Epoll file descriptor
+ * @param fd File descriptor to add
+ * @param one_shot Whether to use EPOLLONESHOT flag
+ * @details Adds a file descriptor to the epoll instance for event monitoring.
+ *          Sets up non-blocking I/O and configures event types (read, hangup, error).
+ */
 void addfd(int epollfd, int fd, bool one_shot)
 {
     epoll_event event;
@@ -36,12 +67,27 @@ void addfd(int epollfd, int fd, bool one_shot)
     setnonblocking(fd);
 }
 
+/**
+ * @brief Remove file descriptor from epoll instance
+ * @param epollfd Epoll file descriptor
+ * @param fd File descriptor to remove
+ * @details Removes a file descriptor from epoll monitoring and closes it.
+ *          Used for cleaning up client connections.
+ */
 void removefd(int epollfd, int fd)
 {
     epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, 0);
     close(fd);
 }
 
+/**
+ * @brief Modify epoll events for a file descriptor
+ * @param epollfd Epoll file descriptor
+ * @param fd File descriptor to modify
+ * @param ev New event flags
+ * @details Updates the event monitoring configuration for a file descriptor.
+ *          Used to switch between read and write event monitoring.
+ */
 void modfd(int epollfd, int fd, int ev)
 {
     epoll_event event;
@@ -50,20 +96,35 @@ void modfd(int epollfd, int fd, int ev)
     epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
 }
 
+/**
+ * @brief Initialize HTTP connection with client socket
+ * @param sockfd Client socket file descriptor
+ * @param addr Client address information
+ * @details Sets up a new HTTP connection for a client, including socket configuration,
+ *          epoll registration, and connection state initialization.
+ */
 void http_conn::init(int sockfd, const sockaddr_in & addr)
 {
     m_sockfd = sockfd;
     m_address = addr;
 
+    // Enable address reuse to avoid "Address already in use" error
     int reuse = 1;
     setsockopt(m_sockfd, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
 
+    // Add socket to epoll for event monitoring
     addfd(m_epollfd, sockfd, true);
     m_user_count++;
 
+    // Initialize connection state
     init();
 }
 
+/**
+ * @brief Initialize connection state variables
+ * @details Resets all connection state variables to their initial values.
+ *          Called when creating a new connection or reusing a connection object.
+ */
 void http_conn::init()
 {
     m_check_state = CHECK_STATE_REQUESTLINE;
@@ -78,11 +139,17 @@ void http_conn::init()
     m_linger = false;
     m_content_length = 0;
 
+    // Clear buffers
     bzero(m_read_buf, READ_BUFFER_SIZE);
     bzero(m_write_buf, READ_BUFFER_SIZE);
     bzero(m_real_file, FILENAME_LEN);
 }
 
+/**
+ * @brief Close and cleanup HTTP connection
+ * @details Removes the connection from epoll monitoring, closes the socket,
+ *          and decrements the user count. Also unmaps any memory-mapped files.
+ */
 void http_conn::close_conn()
 {
     if (m_sockfd != -1)
@@ -93,6 +160,12 @@ void http_conn::close_conn()
     }
 }
 
+/**
+ * @brief Read data from client socket
+ * @return true if read was successful, false otherwise
+ * @details Reads HTTP request data from the client socket using non-blocking I/O.
+ *          Handles partial reads and buffer overflow protection.
+ */
 bool http_conn::read() 
 {
     if (m_read_index >= READ_BUFFER_SIZE)
@@ -117,6 +190,12 @@ bool http_conn::read()
     return true;
 }
 
+/**
+ * @brief Main HTTP request processing method
+ * @return HTTP_CODE indicating the result of request processing
+ * @details Implements the main state machine for parsing HTTP requests.
+ *          Processes the request line, headers, and body according to HTTP/1.1 protocol.
+ */
 http_conn::HTTP_CODE http_conn::process_read()
 {
 
@@ -177,6 +256,13 @@ http_conn::HTTP_CODE http_conn::process_read()
     return NO_REQUEST;
 }
 
+/**
+ * @brief Parse HTTP request line
+ * @param text The request line text to parse
+ * @return HTTP_CODE indicating parsing result
+ * @details Parses the HTTP request line (method, URL, version) and validates
+ *          the format according to HTTP/1.1 specification.
+ */
 http_conn::HTTP_CODE http_conn::parse_request_line(char * text)
 {
     m_url = strpbrk(text, " \t");

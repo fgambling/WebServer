@@ -4,12 +4,95 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>首页</title>
+    <title>Lightweight Linux Web Server</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .feature-list {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .feature-list h3 {
+            color: #495057;
+            margin-top: 0;
+        }
+        .feature-list ul {
+            color: #6c757d;
+        }
+        .status {
+            text-align: center;
+            color: #28a745;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <h1>🚀 Lightweight Linux Web Server</h1>
+        
+        <div class="status">
+            ✅ Server is running successfully!
+        </div>
 
-    <h1>欢迎来到首页~~~</h1> </br>
-    <img src="images/image1.jpg"  alt="ces" />
-    
+        <div class="feature-list">
+            <h3>🌟 Key Features:</h3>
+            <ul>
+                <li><strong>Event-Driven Architecture:</strong> Uses Linux epoll for high-performance event notification</li>
+                <li><strong>Multi-Threading:</strong> Thread pool for concurrent request processing</li>
+                <li><strong>Non-Blocking I/O:</strong> Efficient handling of multiple concurrent connections</li>
+                <li><strong>HTTP/1.1 Support:</strong> Full HTTP protocol implementation</li>
+                <li><strong>Memory-Mapped Files:</strong> Efficient static file serving</li>
+                <li><strong>High Concurrency:</strong> Supports thousands of simultaneous connections</li>
+            </ul>
+        </div>
+
+        <div class="feature-list">
+            <h3>🛠️ Technical Stack:</h3>
+            <ul>
+                <li><strong>Language:</strong> C++</li>
+                <li><strong>Platform:</strong> Linux</li>
+                <li><strong>I/O Model:</strong> Event-driven with epoll</li>
+                <li><strong>Concurrency:</strong> Thread pool with producer-consumer pattern</li>
+                <li><strong>Synchronization:</strong> POSIX mutex, semaphore, and condition variables</li>
+                <li><strong>Protocol:</strong> HTTP/1.1 with GET method support</li>
+            </ul>
+        </div>
+
+        <p style="text-align: center; color: #6c757d; margin-top: 30px;">
+            This page is served by a lightweight, high-performance web server implemented in C++.
+            The server uses event-driven I/O and multi-threading to handle concurrent requests efficiently.
+        </p>
+
+        <img src="images/image1.jpg" alt="Server Demo Image" />
+        
+        <p style="text-align: center; color: #6c757d; font-size: 0.9em;">
+            Built with ❤️ using modern C++ and Linux system programming
+        </p>
+    </div>
 </body>
 </html>
